@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/erin.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/monokai.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>Token Up</h1><p>
+					<h2>Keeping Hands Out of the Cookie Jar</h2><p>
+					<h4>Erin Browning</h4>
+				</section>
+				<section>
+					Slides will be available at:<p>
+					<a href="https://www.frowning.wtf/token-up">https://www.frowning.wtf/toorcon2019</a>
+				</section>
+				<section>
+					<section>
+						<h3>$whoami</h3>
+					</section>
+					<section>
+						Erin Browning<p>
+						Senior Security Engineer<p>
+						a.k.a., I'm a hacker
+					</section>
+					<section>
+						You can contact me at:<p>
+						<a href="mailto:erin@frowning.wtf">erin@frowning.wtf</a><p>
+						<a href="https://www.twitter.com/efrowning">@efrowning</a>
+					</section>
+					<section>
+						<img src="./media/latacora-logo.png" alt="latacora logo">
+					</section>
+					<section>
+						<img src="./media/slack-logo.svg" alt="slack logo" height="80%">
+					</section>
+					<section>
+						<h3 font-weight="900"><font color="#38BA96">Slack is hiring!</font></h3><p>
+						Slack is used by millions of people every day – we need engineers who want to make that experience as secure and enjoyable as possible.<p>
+						<a href="slack.com/jobs" style="color:#38ba96;">slack.com/jobs</a>
+					</section>
+				</section>
+				<section>
+					All of the code-blocked <code>frowning.wtf</code> URLs are fake.<br>
+					Please don't attack my website.<br>
+				</section>
+				<section>
+					<img src="./media/goose.jpeg"><br>
+				</section>
+				<section>
+					<section>
+						I'm going to expand on a point Tony made earlier in his API talk.<br>
+						<img src="./media/tony.png">
+					</section>
+					<section>
+						At the very end of his talk, he'd listed the <code>Content-Type</code> header as a way to secure your API.<br>
+						Let's talk about why you'd care.
+					</section>
+				</section>
+				<section>
+					<section>
+						Certain content types will send cross origin without Cross-Origin Resouce Sharing enabled.
+					</section>
+					<section>
+						Why is that bad?
+					</section>
+					<section>
+						<img src="./media/csrf.png">
+					</section>
+					<section>
+						By default, cookies are included in requests sent cross domain.
+					</section>
+					<section>
+						<img src="./media/csrf-example.jpeg">
+					</section>
+					<section>
+						<img src="./media/money-is-tranferred.png">
+					</section>
+					<section>
+						We can't talk about safely sharing resources between domains without talking about SOP.
+					</section>
+					<section>
+						What is the Same Origin Policy?<p>
+						Lots of requests can't be made from URL1 to URL2 if they differ on the following things:
+						<img src="./media/sop.png">
+						<ul>
+							<li>Protocol (e.g., HTTP vs HTTPS)</li>
+							<li>Port</li>
+							<li>Host</li>
+						</ul><p>
+					</section>
+					<section>
+						What is CORS?
+					</section>
+					<section>
+						<img src="./media/cors.png"><p>
+						We care about CORS because of the protection offered by the Same Origin Policy (SOP).
+					</section>
+					<section>
+						CORS must be set on the assets you are accessing.
+					</section>	
+					<section>
+						How do you even do CSRF protection to your API?<br>
+						There's an easier way than randomized tokens.
+					</section>
+					<section>
+						Traditional CSRF protection stores a random token in a form in an HTML page.<p>
+						That token gets stored on the server as well.<p>
+						When the form is submitted, the token is sent with the form data and validated on the server.
+					</section>
+					<section>
+						Your API may be using a CSRF token, or it may just be relying on monolith form CSRF protection--aka, your api may be vulnerable.
+					</section>
+					<section>
+						Some common <code>Content-Types</code>:<br>
+						<ul>
+							<li><code>multipart/form-data</code></li>
+							<li><code>text/plain</code></li>
+							<li><code>application/x-www-url-form-encoded</code></li>
+							<li><code>application/json</code></li>
+							<li><code>application/xml</code></li>
+						</ul>
+					</section>
+					<section>
+						You can protect from CSRF by dropping any <code>Content-Type</code> your API doesn't consume.
+						<ul>
+							<li><code>multipart/form-data</code>, can go cross origin</li> 
+							<li><code>text/plain</code>, can go cross origin</li>
+							<li><code>application/x-www-url-form-encoded</code>, can go cross origin</li>
+							<li><code>application/json</code>, can't go cross origin without CORS</li>
+							<li><code>application/xml</code>, can't go cross origin without CORS</li>
+						</ul>
+					</section>
+				</section>
+				<section>
+					<section>
+						Problem: How can you drop these legacy formats if you have a monolith on the same TLD as your API that requires these?
+					</section>
+					<section><img src="./media/architecture-header.png"></section>
+					<section>
+						First, let's talk about a typical application structure:
+						<ul>
+							<li><code>www.frowning.wtf</code> - contains your frontend + any monolith code</li>
+							<li><code>www.frowning.wtf/api</code> - api</li>
+							<li><code>www.frowning.wtf/admin</code> - administrator site</li>
+						</ul>
+					</section>
+					<section>
+						<img src="./media/frankenstein.png"><p>
+					</section>
+					<section>
+						use subdomains and cookie scoping, a.k.a.,
+					</section>
+					<section>
+						<img src="./media/architecture-header.png">
+					</section>
+					<section>
+						Now you have: <p>
+							<ul>
+								<li><code>api.frowning.wtf</code></li>
+								<li><code>www.frowning.wtf</code></li>
+								<li><code>admin.frowning.wtf</code></li>
+							</ul>
+					</section>
+					<section>
+						Scope cookies to www, admin and api instead of using *.<p>
+					</section>
+				</section>
+				<section>
+					see you on the internet
+				</section>
+			</div>
+		</div>
+
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true }
+				]
+			});
+			Reveal.configure({ slideNumber: true },
+				{ slideNumber: 'c/t' });
+		</script>
+	</body>
+</html>
